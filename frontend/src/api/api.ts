@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3000';
+const API_URL =
+  (import.meta as ImportMeta & { env: { VITE_API_URL?: string } }).env
+    .VITE_API_URL || 'http://localhost:3000';
 
 export interface User {
   id: number;
@@ -17,6 +19,14 @@ export interface Task {
   status: 'TODO' | 'IN_PROGRESS' | 'DONE';
   createdAt: string;
   updatedAt: string;
+  userId: number;
+}
+
+export interface TaskComment {
+  id: number;
+  body: string;
+  createdAt: string;
+  taskId: number;
   userId: number;
 }
 
@@ -110,5 +120,22 @@ export async function deleteTask(id: number): Promise<void> {
   await request(`/tasks/${id}`, {
     method: 'DELETE',
     headers: authHeaders(),
+  });
+}
+
+export async function getTaskComments(taskId: number): Promise<TaskComment[]> {
+  return request<TaskComment[]>(`/tasks/${taskId}/comments`, {
+    headers: authHeaders(),
+  });
+}
+
+export async function createTaskComment(
+  taskId: number,
+  body: string,
+): Promise<TaskComment> {
+  return request<TaskComment>(`/tasks/${taskId}/comments`, {
+    method: 'POST',
+    headers: authHeaders(),
+    body: JSON.stringify({ body }),
   });
 }

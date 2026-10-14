@@ -8,7 +8,7 @@ import { UsersModule } from '../users/users.module.js';
   imports: [
     UsersModule,
     JwtModule.register({
-      secret: 'task-tracker-secret',
+      secret: process.env.JWT_SECRET || 'task-tracker-local-secret',
       signOptions: {
         expiresIn: '1h',
       },

@@ -1,16 +1,84 @@
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16-alpine
     container_name: task-tracker-postgres
-    restart: unless-stopped
     environment:
-      POSTGRES_USER: taskuser
-      POSTGRES_PASSWORD: taskpassword
-      POSTGRES_DB: tasktracker
+      POSTGRES_USER: ${POSTGRES_USER:-taskuser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-taskpassword}
+      POSTGRES_DB: ${POSTGRES_DB:-tasktracker}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  notifications:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-tracker-notifications
+    command: ["node", "dist/main-notifications.js"]
+    environment:
+      PORT: 3001
+      DB_HOST: postgres
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER:-taskuser}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-taskpassword}
+      DB_NAME: ${POSTGRES_DB:-tasktracker}
+      NOTIFICATIONS_API_KEY: ${NOTIFICATIONS_API_KEY:-local-notifications-key}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "node",
+          "-e",
+          "fetch('http://localhost:3001/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: task-tracker-backend
+    environment:
+      PORT: ${PORT:-3000}
+      DB_HOST: postgres
+      DB_PORT: ${DB_PORT:-5432}
+      DB_USERNAME: ${POSTGRES_USER:-taskuser}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-taskpassword}
+      DB_NAME: ${POSTGRES_DB:-tasktracker}
+      JWT_SECRET: ${JWT_SECRET:-task-tracker-local-secret}
+      NOTIFICATIONS_URL: http://notifications:3001
+      NOTIFICATIONS_API_KEY: ${NOTIFICATIONS_API_KEY:-local-notifications-key}
+    ports:
+      - "3000:3000"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      notifications:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL:-http://localhost:3000}
+    container_name: task-tracker-frontend
+    ports:
+      - "5173:80"
+    depends_on:
+      - backend
 
 volumes:
   postgres_data:
