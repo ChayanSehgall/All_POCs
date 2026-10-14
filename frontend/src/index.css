@@ -160,6 +160,7 @@ main {
 
 .task-card {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   gap: 20px;
   padding: 20px;
@@ -191,6 +192,22 @@ main {
   align-items: center;
 }
 
+.task-comments {
+  flex-basis: 100%;
+  border-top: 1px solid #e5e7eb;
+  padding-top: 12px;
+}
+
+.task-comments form {
+  display: flex;
+  gap: 8px;
+}
+
+.task-comments small {
+  color: #6b7280;
+  font-size: 0.75rem;
+}
+
 .empty-state {
   padding: 50px;
   text-align: center;
@@ -204,6 +221,10 @@ main {
   }
 
   .task-card {
+    flex-direction: column;
+  }
+
+  .task-comments form {
     flex-direction: column;
   }
 

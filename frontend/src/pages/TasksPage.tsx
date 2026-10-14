@@ -8,6 +8,7 @@ import {
 } from '../api/api';
 
 import TaskForm from '../components/TaskForm';
+import TaskComments from '../components/TaskComments';
 
 export default function TasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
@@ -154,6 +155,7 @@ export default function TasksPage() {
                     Delete
                   </button>
                 </div>
+                <TaskComments taskId={task.id} />
               </div>
             ))}
           </div>
