@@ -131,15 +131,20 @@ Invoke-WebRequest "$FRONTEND_URL/login" | Select-Object StatusCode
 
 Then open `$FRONTEND_URL`, register a user, log in, create a task, and add a comment. Browser devtools should show requests going to `$BACKEND_URL`, not `localhost`. Verify the notifications service is reachable with `Invoke-WebRequest "$NOTIFICATIONS_URL/health"`; a comment should create one event in `notification_events` in Cloud SQL.
 
-## Claude Code workflow record
+## AI-assisted workflow record
 
-Claude Code was not run from this Copilot session. To meet the Week 3 requirement, run the prompts below in Claude Code against this branch, review the resulting diff yourself, and fill in the actual corrections before presenting. Do not describe the prompts as completed until run.
+**Assistant:** Copilot SDK in VS Code (not Claude Code). This is a transparent substitute, not a claim that the Claude Code-specific requirement was met.
 
-1. **Plan and implement:** “Inspect the task tracker. Plan and implement task comments end-to-end: ownership-safe NestJS endpoints, PostgreSQL persistence, React UI, a separate notifications service, and focused tests. First list files and assumptions; then implement and run relevant checks. Do not change unrelated files.”
-2. **Self-review:** “Review your diff as a skeptical reviewer. Find correctness, authorization, failure-handling, test, and deployment issues. Fix only confirmed issues and rerun relevant checks.”
-3. **Refactor and document:** “Refactor the roughest changed module without changing its behavior. Update the README with local run, service architecture, deployment, limitations, and verification steps.”
+1. **Plan and implement:** The task prompt requested the Task Tracker API/UI, containerized GCP deployment, an AI-assisted feature with tests, and a multi-service capstone. I inspected the existing repository and its uncommitted changes, ran the existing checks, and had the user choose task comments plus a notifications service.
+2. **Build and test:** Added ownership-checked comment endpoints, PostgreSQL entities, UI, an API-key-protected notifications service, Compose wiring, unit tests, TypeScript checking, and deployment documentation.
+3. **Review and refactor:** Re-ran the backend/frontend checks and traced comment ownership and notification persistence. Corrected stale NestJS test expectations/dependency setup instead of changing working app behavior. Converted the React JSX entry files to TypeScript and added `tsc --noEmit`.
+4. **Document:** Added setup, deployment, limitations, self-review, and walkthrough notes in this README.
 
-**Human corrections/review notes (complete after the Claude Code run):** record the prompt/output that needed correction, the final code decision, and the test or manual check that verified it. Confirm comment ownership, notification retry/idempotency, and Cloud Run environment configuration.
+**Human input/corrections:** The user chose “Task comments + notification service” and then explicitly said “forget claude code, you do that part.” Therefore Copilot did the AI-assisted implementation/review/documentation work; no Claude Code prompts were run. Human review must still decide whether the Copilot substitute is acceptable for the course rubric.
+
+**Review finding and limitation:** The comment is committed before the notifications HTTP call. If notification delivery fails, the request reports an error although the comment is saved; retrying can create a second comment/event. Notification events are idempotent by `commentId`, but comment creation is not. This is documented rather than hidden; implement a transactional outbox or request-idempotency design before relying on delivery.
+
+**Verification evidence:** Backend: 9 test files / 10 tests passed, build passed, lint passed with one existing unused-parameter warning. Frontend: typecheck, build, and lint passed. Podman Compose config validation and both multi-stage container builds passed. An isolated container run registered/logged in a user, created a task and comment, retrieved the comment, confirmed one notification event in PostgreSQL, and served `/login` from nginx. The already-running Task Tracker containers were left untouched. Host-browser port forwarding and GCP deployment were not verified; `gcloud` is not installed here.
 
 ## Git self-review flow
 
@@ -151,9 +156,9 @@ The feature branch for this work is `feature/task-comments-notifications`. Befor
 2. **1:00–3:00 — Live demo:** register/log in, create a task, add a comment, and show it persisted in the task list and notification event table. Point out task-owner authorization and the service API-key boundary.
 3. **3:00–4:30 — Containers:** show Compose services and the multi-stage API/frontend builds; open the local UI and service health endpoint.
 4. **4:30–6:00 — Cloud:** open the deployed frontend, demonstrate the API URL and comment flow, and show Cloud Run services and Cloud SQL attachment.
-5. **6:00–7:30 — Claude Code:** after actually completing the documented Claude workflow, show the prompts, a reviewed diff, tests, and specific human corrections. If the workflow has not been run, state that plainly and present this as follow-up work.
+5. **6:00–7:30 — AI-assisted build:** show this workflow record, the Copilot-assisted diff, tests, and the human decision to substitute Copilot for Claude Code. Be explicit that a Claude-specific rubric item is unmet unless the instructor accepts the substitute.
 6. **7:30–9:00 — Git:** show the feature branch, self-review checklist, PR-style summary, and merge commit. Do not claim a remote PR or merge unless it was actually created.
-7. **9:00–10:00 — Debugging story:** use a real observed issue (for example, API startup waiting for PostgreSQL, invalid notification credentials, or a deployed Vite URL pointing at localhost). Show evidence, root cause, fix, and retest; do not invent a debugging incident.
+7. **9:00–10:00 — Debugging story:** while building the API image, `npm ci` in the Node 22 image rejected the lockfile because `vite-tsconfig-paths` pulled a TypeScript 5-only peer while NestJS 12 requires TypeScript 6. Replaced that plugin with Vite's native `resolve.tsconfigPaths` option in both Vitest configs and removed the obsolete package. Re-ran tests and rebuilt both images successfully.
 
 ## Cleanup
 
